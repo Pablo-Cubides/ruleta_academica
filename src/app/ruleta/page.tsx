@@ -1,49 +1,61 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import QuestionWheel from '@/components/QuestionWheel';
+import QuestionWheel from '../../components/QuestionWheel';
 
 export default function RuletaPage() {
   const searchParams = useSearchParams();
   const setId = searchParams.get("id");
   const questionsParam = searchParams.get("questions");
+  const tempParam = searchParams.get("temp");
   const [questions, setQuestions] = useState<string[]>([]);
   const [loading, setLoading] = useState(!!setId);
   const [error, setError] = useState("");
 
-  console.log('RuletaPage - searchParams:', { setId, questionsParam });
-
   useEffect(() => {
-    console.log('useEffect triggered with:', { setId, questionsParam });
     
     // Si hay un parámetro de preguntas, lo usamos directamente
     if (questionsParam) {
       try {
-        console.log('Parsing questionsParam:', questionsParam);
         const decoded = decodeURIComponent(questionsParam);
-        console.log('Decoded questionsParam:', decoded);
         const parsedQuestions = JSON.parse(decoded);
-        console.log('Parsed questions:', parsedQuestions);
         
         if (Array.isArray(parsedQuestions) && parsedQuestions.length > 0) {
-          console.log('Setting questions from URL parameter');
           setQuestions(parsedQuestions);
           return;
         } else {
           const errorMsg = 'Parsed questions is not an array or is empty';
-          console.error(errorMsg);
+          // set error message for user
           setError(errorMsg);
         }
       } catch (e) {
-        const errorMsg = `Error al parsear preguntas: ${e.message}`;
-        console.error(errorMsg, e);
-        setError(errorMsg);
+        const message = e instanceof Error ? e.message : String(e);
+        const errorMsg = `Error al parsear preguntas: ${message}`;
+  // Log and set error
+  setError(errorMsg);
+      }
+    }
+    
+    // If temp param is present, try to read from sessionStorage
+    if (tempParam) {
+      try {
+        const raw = sessionStorage.getItem('tempQuestions');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setQuestions(parsed);
+            return;
+          }
+        }
+        setError('No se encontraron preguntas temporales en el navegador');
+      } catch (e) {
+        const message = e instanceof Error ? e.message : String(e);
+        setError(`Error al leer preguntas temporales: ${message}`);
       }
     }
     
     // Si hay un ID de conjunto, cargamos las preguntas
     if (setId) {
-      console.log('Fetching questions for set ID:', setId);
       setLoading(true);
       setError('');
       
@@ -51,24 +63,22 @@ export default function RuletaPage() {
         .then(async (res) => {
           if (!res.ok) {
             const errorData = await res.text().catch(() => 'No error details');
+            // API returned error body for debugging
             console.error(`API Error ${res.status}:`, errorData);
             throw new Error(`Error ${res.status}: ${errorData}`);
           }
           return res.json();
         })
         .then(data => {
-          console.log('Received question set data:', data);
           if (data?.questions?.length > 0) {
             const questionTexts = data.questions.map((q: any) => q.text);
-            console.log('Extracted question texts:', questionTexts);
             setQuestions(questionTexts);
           } else {
             throw new Error('No questions found in the response');
           }
         })
         .catch((error) => {
-          console.error('Error loading question set:', error);
-          setError(`No se pudo cargar el conjunto de preguntas: ${error.message}`);
+          setError(`No se pudo cargar el conjunto de preguntas`);
         })
         .finally(() => {
           setLoading(false);

@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-  "start": "next start",
+    "start": "next start",
   "lint": "next lint",
   "postinstall": "prisma generate",
   "prisma:migrate": "prisma migrate dev --name init",
@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@prisma/client": "^6.10.1",
+    "zod": "^3.22.2",
     "framer-motion": "^11.0.3",
     "next": "14.2.3",
     "papaparse": "^5.5.3",

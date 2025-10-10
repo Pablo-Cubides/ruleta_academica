@@ -1,3 +1,4 @@
+"use client";
 import React, { useState, useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
 
@@ -38,6 +39,8 @@ const QuestionWheel = ({ questions }: QuestionWheelProps) => {
   const [wheelSize, setWheelSize] = useState(600) // Default size
   const wheelRef = useRef<SVGSVGElement>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null)
+  const previousActiveElementRef = useRef<HTMLElement | null>(null)
 
   useEffect(() => {
     const handleResize = () => {
@@ -50,10 +53,31 @@ const QuestionWheel = ({ questions }: QuestionWheelProps) => {
 
   useEffect(() => {
     setQuestionList(questions)
-  setSelectedQuestion('')
+    setSelectedQuestion('')
     setSelectedIndex(null)
     setRotation(0)
   }, [questions])
+
+  // Manage focus when modal opens/closes
+  useEffect(() => {
+    if (isModalOpen) {
+      // store previous active element
+      previousActiveElementRef.current = document.activeElement as HTMLElement | null;
+      // focus the close button when modal opens
+      setTimeout(() => {
+        closeButtonRef.current?.focus();
+      }, 0);
+      // prevent background scrolling
+      document.body.style.overflow = 'hidden';
+    } else {
+      // restore focus
+      previousActiveElementRef.current?.focus();
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isModalOpen]);
 
   const handleSpin = () => {
     if (isSpinning || questionList.length === 0) return;
@@ -284,9 +308,9 @@ const QuestionWheel = ({ questions }: QuestionWheelProps) => {
                 Pregunta {typeof selectedIndex === 'number' ? `#${selectedIndex + 1}` : ''}
               </h2>
               <button
+                ref={closeButtonRef}
                 className="text-white/80 hover:text-white px-3 py-1 rounded-md bg-white/10"
                 onClick={() => setIsModalOpen(false)}
-                autoFocus
               >
                 Cerrar
               </button>

@@ -1,3 +1,4 @@
+"use client";
 import React, { useState } from 'react'
 import * as XLSX from 'xlsx'
 import Papa from 'papaparse'
@@ -10,6 +11,8 @@ interface FileInputProps {
   onSaveSuccess?: () => void
   selectedSet?: number | null
   fileQuestions?: string[]
+  showGroupNameInput?: boolean
+  onSave?: (questions: string[], groupName: string) => Promise<void> | void
 }
 
 // Helper function to parse questions from a file
@@ -73,7 +76,9 @@ const FileInput = ({
   onUpload,
   onSaveSuccess,
   selectedSet,
-  fileQuestions = []
+  fileQuestions = [],
+  showGroupNameInput = true,
+  onSave
 }: FileInputProps) => {
   const [file, setFile] = useState<File | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -120,25 +125,38 @@ const FileInput = ({
       setError('Por favor, ingrese un nombre para el grupo de preguntas');
       return;
     }
-    
+
+    // If the user intends to play immediately after upload, avoid setting UI state
+    // that can trigger re-renders before navigation. Parse, write to sessionStorage and redirect.
+    if (playAfterUpload) {
+      try {
+        const questions = await parseQuestionsFromFile(file);
+        try {
+          sessionStorage.setItem('tempQuestions', JSON.stringify(questions));
+          window.location.href = `/ruleta?temp=1`;
+        } catch (e) {
+          const encoded = encodeURIComponent(JSON.stringify(questions));
+          window.location.href = `/ruleta?questions=${encoded}`;
+        }
+      } catch (err: any) {
+        setError(err.message || 'Error al procesar el archivo');
+      }
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
 
     try {
       const questions = await parseQuestionsFromFile(file);
-      
+
       // Call the onUpload callback with the questions and group name
       onUpload(questions, groupName);
-      
+
       setIsUploaded(true);
-      
-      if (playAfterUpload) {
-        const encoded = encodeURIComponent(JSON.stringify(questions));
-        window.location.href = `/ruleta?questions=${encoded}`;
-      }
-      
+
       // If save was successful and we have a callback, call it
-      if (!playAfterUpload && onSaveSuccess) {
+      if (onSaveSuccess) {
         onSaveSuccess();
       }
     } catch (err: any) {
@@ -156,8 +174,15 @@ const FileInput = ({
       const encoded = encodeURIComponent(JSON.stringify(fileQuestions))
       window.location.href = `/ruleta?questions=${encoded}`
     } else if (file) {
-      // If we have a file but it's not uploaded yet, upload it first
-      await handleUpload(true)
+      // If we have a file but it's not uploaded yet, play immediately without changing UI state
+      try {
+        const questions = await parseQuestionsFromFile(file);
+        sessionStorage.setItem('tempQuestions', JSON.stringify(questions));
+        window.location.href = `/ruleta?temp=1`;
+      } catch (err) {
+        // fallback to using handleUpload to show errors
+        await handleUpload(true)
+      }
     }
   }
 
@@ -171,18 +196,20 @@ const FileInput = ({
         <h2 className="text-4xl font-bold text-primary-500">Cargar Preguntas</h2>
 
         <div className="space-y-6">
-          <div>
-            <label className="block mb-3 text-2xl font-medium text-white">
-              Nombre del grupo:
-            </label>
-            <input
-              type="text"
-              value={groupName}
-              onChange={(e) => onGroupNameChange(e.target.value)}
-              placeholder="Ej: Historia Universal"
-              className="w-full p-4 mb-6 text-xl text-white bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
-            />
-          </div>
+          {showGroupNameInput && (
+            <div>
+              <label className="block mb-3 text-2xl font-medium text-white">
+                Nombre del grupo:
+              </label>
+              <input
+                type="text"
+                value={groupName}
+                onChange={(e) => onGroupNameChange(e.target.value)}
+                placeholder="Ej: Historia Universal"
+                className="w-full p-4 mb-6 text-xl text-white bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+            </div>
+          )}
           
           <div>
             <label className="block mb-3 text-2xl font-medium text-white">
@@ -260,7 +287,35 @@ const FileInput = ({
             {!isUploaded && questionsPreview.length > 0 && (
               <motion.button
                 key="save-button"
-                onClick={() => handleUpload(false)}
+                onClick={async () => {
+                  if (!file) {
+                    setError('Por favor, seleccione un archivo');
+                    return;
+                  }
+                  if (!groupName.trim()) {
+                    setError('Por favor, ingrese un nombre para el grupo de preguntas');
+                    return;
+                  }
+                  setIsLoading(true);
+                  setError(null);
+                  try {
+                    const questions = await parseQuestionsFromFile(file);
+                    if (typeof onSave === 'function') {
+                      await onSave(questions, groupName);
+                      setIsUploaded(true);
+                      if (onSaveSuccess) onSaveSuccess();
+                    } else {
+                      // fallback behavior: notify parent of parsed questions
+                      onUpload(questions, groupName);
+                      setIsUploaded(true);
+                      if (onSaveSuccess) onSaveSuccess();
+                    }
+                  } catch (err: any) {
+                    setError(err.message || 'Error al procesar el archivo');
+                  } finally {
+                    setIsLoading(false);
+                  }
+                }}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 className="w-full px-8 py-5 text-2xl font-bold text-white transition-colors bg-green-600 rounded-2xl hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
