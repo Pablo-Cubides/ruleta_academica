@@ -11,6 +11,10 @@ export default function RuletaPage() {
   const [questions, setQuestions] = useState<string[]>([]);
   const [loading, setLoading] = useState(!!setId);
   const [error, setError] = useState("");
+  // initialized indicates we've attempted to read client-only sources
+  // (query params parsing, sessionStorage or fetch) so we don't flash
+  // an empty-state while the effect hasn't run yet.
+  const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
     
@@ -22,17 +26,20 @@ export default function RuletaPage() {
         
         if (Array.isArray(parsedQuestions) && parsedQuestions.length > 0) {
           setQuestions(parsedQuestions);
+          setInitialized(true);
           return;
         } else {
           const errorMsg = 'Parsed questions is not an array or is empty';
           // set error message for user
           setError(errorMsg);
+          setInitialized(true);
         }
       } catch (e) {
         const message = e instanceof Error ? e.message : String(e);
         const errorMsg = `Error al parsear preguntas: ${message}`;
   // Log and set error
   setError(errorMsg);
+  setInitialized(true);
       }
     }
     
@@ -44,13 +51,16 @@ export default function RuletaPage() {
           const parsed = JSON.parse(raw);
           if (Array.isArray(parsed) && parsed.length > 0) {
             setQuestions(parsed);
+            setInitialized(true);
             return;
           }
         }
         setError('No se encontraron preguntas temporales en el navegador');
+        setInitialized(true);
       } catch (e) {
         const message = e instanceof Error ? e.message : String(e);
         setError(`Error al leer preguntas temporales: ${message}`);
+        setInitialized(true);
       }
     }
     
@@ -82,11 +92,13 @@ export default function RuletaPage() {
         })
         .finally(() => {
           setLoading(false);
+          setInitialized(true);
         });
     }
   }, [setId, questionsParam]);
 
-  if (loading) return <div className="text-2xl text-primary-400 p-12">Cargando preguntas...</div>;
+  // While we haven't initialized client-only sources, show a loading placeholder
+  if (!initialized || loading) return <div className="text-2xl text-primary-400 p-12">Cargando preguntas...</div>;
   if (error) return <div className="text-2xl text-red-400 p-12">{error}</div>;
   if (!questions.length) return <div className="text-2xl text-yellow-400 p-12">No hay preguntas cargadas.</div>;
 
