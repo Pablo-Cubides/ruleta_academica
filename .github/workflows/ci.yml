@@ -22,10 +22,12 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
-      - name: Install dependencies
+      - name: Install dependencies (use legacy peer deps to match local install)
         run: |
-          npm ci
-        # Allow CI to continue even if optional env vars like SENTRY_DSN are missing
+          npm install --legacy-peer-deps
+        # Using --legacy-peer-deps here mirrors the local dev install and
+        # avoids CI failing on peer dependency conflicts (e.g. testing libs
+        # that currently require React 18 while the project uses React 19).
 
       - name: Generate Prisma Client
         run: |
