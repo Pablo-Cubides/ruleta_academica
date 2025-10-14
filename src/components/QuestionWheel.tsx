@@ -194,7 +194,7 @@ const QuestionWheel = ({ questions }: QuestionWheelProps) => {
 
   return (
     <div className="flex flex-col items-center gap-6 w-full">
-      <div className="text-2xl font-semibold text-primary-400">
+  <div className="text-2xl font-semibold text-primary">
         Preguntas restantes: {questionList.length}
       </div>
       <div className="relative flex justify-center items-center">
@@ -274,7 +274,7 @@ const QuestionWheel = ({ questions }: QuestionWheelProps) => {
       </div>
       <div className="flex justify-center gap-4 mt-6">
         <button
-          className="bg-primary-500 hover:bg-primary-700 text-white font-bold py-3 px-8 rounded text-2xl disabled:opacity-50"
+          className="btn-primary disabled:opacity-50"
           onClick={handleSpin}
           disabled={isSpinning || questionList.length === 0}
         >
@@ -304,7 +304,7 @@ const QuestionWheel = ({ questions }: QuestionWheelProps) => {
             className="relative z-10 w-full max-w-2xl mx-4 p-6 bg-gray-900 rounded-2xl border border-gray-700 shadow-2xl"
           >
             <div className="flex items-start justify-between gap-4">
-              <h2 id="modal-title" className="text-2xl font-bold text-primary-400">
+              <h2 id="modal-title" className="text-2xl font-bold text-primary">
                 Pregunta {typeof selectedIndex === 'number' ? `#${selectedIndex + 1}` : ''}
               </h2>
               <button
@@ -329,7 +329,7 @@ const QuestionWheel = ({ questions }: QuestionWheelProps) => {
                 Eliminar pregunta
               </button>
               <button
-                className="bg-primary-600 hover:bg-primary-700 text-white font-semibold px-4 py-2 rounded-lg"
+                className="btn-primary"
                 onClick={() => setIsModalOpen(false)}
               >
                 Aceptar

@@ -22,7 +22,7 @@
     "zod": "^4.1.12"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.1.14",
+    
     "@types/node": "^20.11.16",
     "@types/papaparse": "^5.3.16",
     "@types/react": "^18.2.48",
@@ -34,7 +34,8 @@
     "eslint-config-next": "14.2.3",
     "postcss": "^8.4.38",
     "prisma": "^6.10.1",
-  "tailwindcss": "^3.4.4",
+  "tailwindcss": "^4.0.0",
+  "@tailwindcss/postcss": "^5.0.0",
     "typescript": "^5.8.3"
   }
 }

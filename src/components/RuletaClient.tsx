@@ -87,7 +87,7 @@ export default function RuletaClient() {
     }
   }, [setId, questionsParam, tempParam]);
 
-  if (!initialized || loading) return <div className="text-2xl text-primary-400 p-12">Cargando preguntas...</div>;
+  if (!initialized || loading) return <div className="text-2xl text-primary p-12">Cargando preguntas...</div>;
   if (error) return <div className="text-2xl text-red-400 p-12">{error}</div>;
   if (!questions.length) return <div className="text-2xl text-yellow-400 p-12">No hay preguntas cargadas.</div>;
 
