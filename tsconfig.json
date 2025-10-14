@@ -1,5 +1,8 @@
 {
   "compilerOptions": {
+    // Silence deprecation warnings coming from TypeScript 6.x -> 7.0 migration
+    // See https://aka.ms/ts6
+    "ignoreDeprecations": "6.0",
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
