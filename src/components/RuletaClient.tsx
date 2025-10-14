@@ -85,7 +85,7 @@ export default function RuletaClient() {
           setInitialized(true);
         });
     }
-  }, [setId, questionsParam]);
+  }, [setId, questionsParam, tempParam]);
 
   if (!initialized || loading) return <div className="text-2xl text-primary-400 p-12">Cargando preguntas...</div>;
   if (error) return <div className="text-2xl text-red-400 p-12">{error}</div>;
