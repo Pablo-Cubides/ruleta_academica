@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - chore/**
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+        # Allow CI to continue even if optional env vars like SENTRY_DSN are missing
+
+      - name: Generate Prisma Client
+        run: |
+          npx prisma generate
+
+      - name: Lint
+        run: |
+          npm run lint
+
+      - name: Build
+        run: |
+          npm run build
+        env:
+          # SENTRY_DSN is optional for CI runs; if the secret is not set, the variable will be empty
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+
+    timeout-minutes: 20

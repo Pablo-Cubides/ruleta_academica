@@ -3,6 +3,7 @@ import React, { useState } from 'react'
 import * as XLSX from 'xlsx'
 import Papa from 'papaparse'
 import { motion } from 'framer-motion'
+import { sanitizeText } from '@/lib/sanitize';
 
 interface FileInputProps {
   groupName: string;
@@ -25,7 +26,7 @@ async function parseQuestionsFromFile(file: File): Promise<string[]> {
         complete: (results) => {
           const questions = results.data
             .flat()
-            .map(q => String(q).trim())
+            .map(q => sanitizeText(String(q)))
             .filter(Boolean);
           if (questions.length === 0) {
             return reject(new Error("No se encontraron preguntas válidas en el archivo CSV."));
@@ -53,7 +54,7 @@ async function parseQuestionsFromFile(file: File): Promise<string[]> {
           }
           const worksheet = workbook.Sheets[sheetName];
           const data = XLSX.utils.sheet_to_json<string[]>(worksheet, { header: 1 });
-          const questions = data.flat().map(q => String(q).trim()).filter(Boolean);
+          const questions = data.flat().map(q => sanitizeText(String(q))).filter(Boolean);
           if (questions.length === 0) {
             return reject(new Error("No se encontraron preguntas válidas en el archivo Excel."));
           }
@@ -96,6 +97,15 @@ const FileInput = ({
     ]
     if (!validTypes.includes(selectedFile.type)) {
       setError('Solo se permiten archivos CSV o Excel (.csv, .xlsx)')
+      setFile(null)
+      setQuestionsPreview([])
+      return
+    }
+
+    // limit file size to 5MB to prevent memory/CPU issues
+    const MAX_SIZE = 5 * 1024 * 1024;
+    if (selectedFile.size > MAX_SIZE) {
+      setError('Archivo demasiado grande (máx 5MB)')
       setFile(null)
       setQuestionsPreview([])
       return
@@ -187,13 +197,13 @@ const FileInput = ({
   }
 
   return (
-    <div className="space-y-12">
+  <div className="space-y-12">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="space-y-6"
       >
-        <h2 className="text-4xl font-bold text-primary-500">Cargar Preguntas</h2>
+  <h2 className="heading-primary">Cargar Preguntas</h2>
 
         <div className="space-y-6">
           {showGroupNameInput && (
@@ -206,7 +216,7 @@ const FileInput = ({
                 value={groupName}
                 onChange={(e) => onGroupNameChange(e.target.value)}
                 placeholder="Ej: Historia Universal"
-                className="w-full p-4 mb-6 text-xl text-white bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full p-4 mb-6 text-xl input-primary"
               />
             </div>
           )}
@@ -225,7 +235,7 @@ const FileInput = ({
               />
               <label
                 htmlFor="fileInput"
-                className="px-8 py-4 text-white transition-colors cursor-pointer bg-primary-500 rounded-2xl hover:bg-primary-600"
+                className="btn-primary inline-block cursor-pointer"
               >
                 Seleccionar archivo
               </label>
@@ -237,7 +247,7 @@ const FileInput = ({
               <a
                 href="/sample-questions.csv"
                 download
-                className="text-xl underline text-primary-400 hover:text-primary-300"
+                className="text-xl underline text-primary hover:text-secondary"
                 title="Descargar archivo de ejemplo"
               >
                 Descargar ejemplo CSV
@@ -326,16 +336,14 @@ const FileInput = ({
             )}
             
             {/* Play button - always visible when we have questions */}
-      {(isUploaded || questionsPreview.length > 0 || file) && (
+              {(isUploaded || questionsPreview.length > 0 || file) && (
               <motion.button
                 key="play-button"
                 onClick={handlePlayClick}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 className={`w-full px-8 py-5 text-2xl font-bold rounded-2xl transition-colors ${
-                  isUploaded 
-                    ? 'bg-blue-600 hover:bg-blue-700' 
-                    : 'bg-primary-600 hover:bg-primary-700'
+                  isUploaded ? 'bg-blue-600 hover:bg-blue-700' : 'btn-primary'
                 } text-white disabled:opacity-50 disabled:cursor-not-allowed`}
         disabled={isLoading || !groupName.trim()}
               >

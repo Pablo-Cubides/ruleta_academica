@@ -117,7 +117,7 @@ export default function InicioPage() {
 
   return (
     <div className="flex flex-col items-center gap-8 py-12 w-full">
-      <h1 className="text-4xl font-bold text-primary-400 mb-2">Inicio: Cargar o Seleccionar Preguntas</h1>
+      <h1 className="heading-primary">Inicio: Cargar o Seleccionar Preguntas</h1>
       <div className="w-full max-w-xl flex flex-col gap-6">
         <label className="font-semibold text-lg">Seleccionar conjunto guardado:</label>
         <select
@@ -182,12 +182,12 @@ export default function InicioPage() {
               <input
                 type="text"
                 placeholder="Nombre para guardar"
-                className="p-2 rounded border bg-gray-900 text-white text-lg"
+                className="input-primary"
                 value={saveName}
                 onChange={e => setSaveName(e.target.value)}
               />
               <button
-                className="bg-primary-500 hover:bg-primary-700 text-white font-bold py-2 px-6 rounded text-lg"
+                className="btn-primary"
                 onClick={handleSave}
               >
                 Guardar
@@ -199,7 +199,7 @@ export default function InicioPage() {
         {loading && <div className="text-blue-400">Cargando preguntas...</div>}
         {fileQuestions.length > 0 && (
           <div className="bg-gray-800 p-4 rounded mt-4">
-            <div className="text-primary-400 font-semibold mb-2">Preguntas cargadas:</div>
+            <div className="text-primary font-semibold mb-2">Preguntas cargadas:</div>
             <ul className="list-disc ml-6 text-white">
               {fileQuestions.map((q, i) => (
                 <li key={i}>{q}</li>

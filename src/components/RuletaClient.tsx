@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import QuestionWheel from './QuestionWheel';
+import { sanitizeText } from '@/lib/sanitize';
 
 export default function RuletaClient() {
   const searchParams = useSearchParams();
@@ -20,7 +21,8 @@ export default function RuletaClient() {
         const parsedQuestions = JSON.parse(decoded);
 
         if (Array.isArray(parsedQuestions) && parsedQuestions.length > 0) {
-          setQuestions(parsedQuestions);
+          const sanitized = parsedQuestions.map((q: any) => sanitizeText(String(q)));
+          setQuestions(sanitized);
           setInitialized(true);
           return;
         } else {
@@ -42,7 +44,8 @@ export default function RuletaClient() {
         if (raw) {
           const parsed = JSON.parse(raw);
           if (Array.isArray(parsed) && parsed.length > 0) {
-            setQuestions(parsed);
+            const sanitized = parsed.map((q: any) => sanitizeText(String(q)));
+            setQuestions(sanitized);
             setInitialized(true);
             return;
           }
@@ -71,7 +74,7 @@ export default function RuletaClient() {
         })
         .then(data => {
           if (data?.questions?.length > 0) {
-            const questionTexts = data.questions.map((q: any) => q.text);
+            const questionTexts = data.questions.map((q: any) => sanitizeText(String(q.text)));
             setQuestions(questionTexts);
           } else {
             throw new Error('No questions found in the response');
@@ -85,9 +88,9 @@ export default function RuletaClient() {
           setInitialized(true);
         });
     }
-  }, [setId, questionsParam]);
+  }, [setId, questionsParam, tempParam]);
 
-  if (!initialized || loading) return <div className="text-2xl text-primary-400 p-12">Cargando preguntas...</div>;
+  if (!initialized || loading) return <div className="text-2xl text-primary p-12">Cargando preguntas...</div>;
   if (error) return <div className="text-2xl text-red-400 p-12">{error}</div>;
   if (!questions.length) return <div className="text-2xl text-yellow-400 p-12">No hay preguntas cargadas.</div>;
 

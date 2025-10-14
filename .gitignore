@@ -1,3 +1,13 @@
+node_modules/
+/.next
+.appdata/
+.localappdata/
+dist/
+coverage/
+/.env
+.env.local
+.env.*.local
+package-lock.json
 node_modules
 .DS_Store
 npm-debug.log*

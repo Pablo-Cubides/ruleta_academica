@@ -266,6 +266,20 @@ Crea `.env` con:
 DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DB?schema=public"
 ```
 
+Observabilidad (Sentry)
+-----------------------
+La aplicación soporta captura de errores con Sentry. Es opcional en local/CI. Para habilitarla configure la variable de entorno `SENTRY_DSN` en su entorno de despliegue o en los Secrets del repositorio. Opcionalmente use `SENTRY_TRACES_SAMPLE_RATE` (0..1) para activar traces.
+
+Ejemplo:
+```
+SENTRY_DSN="https://...@o0.ingest.sentry.io/0"
+SENTRY_TRACES_SAMPLE_RATE=0.05
+```
+
+Rate limiting
+-------------
+Se añadió un limitador simple en memoria para endpoints POST críticos (por ejemplo `POST /api/questionsets`) con valores conservadores por defecto (5 requests/minuto). Este limitador es intencionalmente simple: funciona por IP y protege contra envíos masivos desde un único origen. Para producción en múltiples instancias, reemplace por un store centralizado (Redis, Memcached) y ajuste límites según necesidades.
+
 ## Desarrollo rápido (sin DB)
 - Puedes pasar preguntas por URL sin configurar DB:
   - `http://localhost:3000/ruleta?questions=["Pregunta 1","Pregunta 2"]`
