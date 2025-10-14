@@ -79,6 +79,17 @@ const QuestionWheel = ({ questions }: QuestionWheelProps) => {
     };
   }, [isModalOpen]);
 
+  // Close modal on Escape key
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape' && isModalOpen) {
+        setIsModalOpen(false);
+      }
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isModalOpen]);
+
   const handleSpin = () => {
     if (isSpinning || questionList.length === 0) return;
     setIsSpinning(true);

@@ -3,6 +3,7 @@ import React, { useState } from 'react'
 import * as XLSX from 'xlsx'
 import Papa from 'papaparse'
 import { motion } from 'framer-motion'
+import { sanitizeText } from '@/lib/sanitize';
 
 interface FileInputProps {
   groupName: string;
@@ -25,7 +26,7 @@ async function parseQuestionsFromFile(file: File): Promise<string[]> {
         complete: (results) => {
           const questions = results.data
             .flat()
-            .map(q => String(q).trim())
+            .map(q => sanitizeText(String(q)))
             .filter(Boolean);
           if (questions.length === 0) {
             return reject(new Error("No se encontraron preguntas válidas en el archivo CSV."));
@@ -53,7 +54,7 @@ async function parseQuestionsFromFile(file: File): Promise<string[]> {
           }
           const worksheet = workbook.Sheets[sheetName];
           const data = XLSX.utils.sheet_to_json<string[]>(worksheet, { header: 1 });
-          const questions = data.flat().map(q => String(q).trim()).filter(Boolean);
+          const questions = data.flat().map(q => sanitizeText(String(q))).filter(Boolean);
           if (questions.length === 0) {
             return reject(new Error("No se encontraron preguntas válidas en el archivo Excel."));
           }
@@ -96,6 +97,15 @@ const FileInput = ({
     ]
     if (!validTypes.includes(selectedFile.type)) {
       setError('Solo se permiten archivos CSV o Excel (.csv, .xlsx)')
+      setFile(null)
+      setQuestionsPreview([])
+      return
+    }
+
+    // limit file size to 5MB to prevent memory/CPU issues
+    const MAX_SIZE = 5 * 1024 * 1024;
+    if (selectedFile.size > MAX_SIZE) {
+      setError('Archivo demasiado grande (máx 5MB)')
       setFile(null)
       setQuestionsPreview([])
       return

@@ -1,11 +1,12 @@
 import { PrismaClient } from '../generated/prisma';
 
-// Only instantiate PrismaClient when a DATABASE_URL is configured.
-// This prevents Prisma from validating the datasource on import when
-// running the app in a demo/dev mode without a database.
-let prisma: PrismaClient | null = null;
-if (process.env.DATABASE_URL) {
-	prisma = new PrismaClient();
+declare global {
+	// eslint-disable-next-line no-var
+	var __prisma?: PrismaClient;
 }
+
+const prisma = global.__prisma ?? new PrismaClient();
+
+if (process.env.NODE_ENV !== 'production') global.__prisma = prisma;
 
 export default prisma;
