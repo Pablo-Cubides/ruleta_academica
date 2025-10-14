@@ -1,3 +1,143 @@
+<!--
+High-quality README authored with a senior engineer voice. Covers quickstart, architecture, data model, endpoints, deployment, troubleshooting and operational notes.
+-->
+# Ruleta Académica — Documentación técnica
+
+Resumen
+-------
+Ruleta Académica es una aplicación web para crear, guardar y jugar conjuntos de preguntas en formato "ruleta". Está construida con Next.js (App Router), TypeScript y Prisma y está pensada para ser una base sólida para demos educativas o integraciones en aulas y eventos.
+
+Objetivo de este documento
+-------------------------
+Proveer una guía completa, práctica y accionable para desarrollar, probar, desplegar y operar la aplicación. Está escrita desde la perspectiva de un desarrollador senior: enfocada en claridad, decisiones de diseño, riesgos conocidos y pasos reproducibles.
+
+Contenido rápido
+----------------
+- Repositorio: https://github.com/Pablo-Cubides/ruleta_academica
+- Stack: Next.js 14 (App Router), TypeScript, TailwindCSS, Prisma (Postgres), Framer Motion.
+- Estado: funcional en local con fallback a localStorage cuando no hay DB.
+
+Requisitos
+----------
+- Node.js 18+ (recomiendo Node 18.17.1 o Node 20.x LTS)
+- npm 9+ (o pnpm/yarn según preferencia)
+- (Opcional) PostgreSQL 14+ si deseas persistir conjuntos
+
+Archivos clave
+-------------
+- `src/app` — Rutas de la aplicación (App Router): `inicio`, `ruleta`, `api/questionsets`.
+- `src/components` — Componentes UI reutilizables (`QuestionWheel`, `file-input`, etc.).
+- `src/lib/prisma.ts` — proveedor de Prisma (lazy init; evita errores si DB no configurada en dev).
+- `prisma/schema.prisma` — modelos `QuestionSet` y `Question`.
+- `public/sample-questions.csv` — ejemplo de archivo para descarga.
+
+Quick start (desarrollo)
+------------------------
+1. Clona el repositorio:
+
+```powershell
+git clone https://github.com/Pablo-Cubides/ruleta_academica.git
+cd ruleta_academica
+```
+
+2. Instala dependencias (esto ejecuta `prisma generate` en postinstall):
+
+```powershell
+npm install
+```
+
+3. (Opcional) Conecta una base de datos PostgreSQL y crea `.env`:
+
+```text
+# .env
+DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DB?schema=public"
+```
+
+4. Ejecuta en modo desarrollo:
+
+```powershell
+npm run dev
+# Abrir http://localhost:3000/inicio
+```
+
+Modo demo (sin DB)
+-------------------
+Si no pones `DATABASE_URL`, la app funcionará en modo demo. Guardados intentados hacia la API devolverán `503` y los conjuntos se almacenarán en `localStorage` para mantener la experiencia.
+
+Estructura y decisiones técnicas
+--------------------------------
+
+1) Separación cliente/servidor
+- El código sigue el patrón App Router de Next.js. Los endpoints de persistencia están en `src/app/api/questionsets`.
+- Componentes que usan browser APIs (sessionStorage/localStorage, eventos DOM) se marcan con `"use client"`.
+
+2) Persistencia y resiliencia
+- Prisma Client se inicializa de forma lazy (ver `src/lib/prisma.ts`). Esto evita que Next.js falle en dev cuando `DATABASE_URL` no está presente.
+- El endpoint POST `/api/questionsets` usa validación con Zod y responde con códigos HTTP apropiados. Si no hay DB configurada, devuelve `503 Service Unavailable`.
+- Se implementó un fallback en cliente: si el POST falla por ausencia de DB, el conjunto se guarda en `localStorage` con un id negativo temporal.
+
+3) Pasaje rápido de preguntas al juego
+- Para evitar consultas pesadas o serializar grandes objetos en la URL se usa `sessionStorage` para pasar preguntas temporales al componente de ruleta durante la navegación (param `?temp=1`).
+
+4) Parsing de archivos
+- `FileInput` usa `papaparse` para CSV y `xlsx` para Excel. El parser produce un arreglo simple de strings (preguntas).
+
+Modelos (extracto de `prisma/schema.prisma`)
+-------------------------------------------
+```prisma
+model QuestionSet {
+  id        Int       @id @default(autoincrement())
+  name      String    @unique
+  questions Question[]
+  createdAt DateTime  @default(now())
+}
+
+model Question {
+  id           Int         @id @default(autoincrement())
+  text         String
+  questionSet  QuestionSet @relation(fields: [questionSetId], references: [id])
+  questionSetId Int
+}
+```
+
+API Endpoints (resumen)
+-----------------------
+- GET `/api/questionsets` — lista conjuntos (dev: devuelve [] si no hay DB)
+- GET `/api/questionsets/:id` — obtiene conjunto con preguntas
+- POST `/api/questionsets` — crea un conjunto; payload validado con Zod: { name: string, questions: string[] }
+
+Operación y despliegue
+----------------------
+
+Recomendaciones para deployment (Vercel / Netlify / Render):
+- Establece `DATABASE_URL` en las variables de entorno del proyecto.
+- Habilita `postinstall` para que Prisma Client se genere.
+- Para migraciones en ambientes gestionados, usa `prisma migrate deploy` durante el pipeline de CI/CD.
+
+Riesgos conocidos y mitigaciones
+--------------------------------
+- Dependencia de Prisma: cuando `DATABASE_URL` no existe, la app usa fallbacks, pero la experiencia de guardado es limitada. Mitigación: documentar el comportamiento y añadir un mecanismo opcional para sincronizar localStorage -> DB cuando se configure la DB.
+- Handling de archivos: CSV/XLSX heterogéneos pueden producir preguntas vacías. El parser descarta entradas vacías y normaliza espacios.
+- Seguridad: los endpoints actuales son públicos. Para entornos reales, añade autenticación (JWT/OAuth) y autorización por recurso.
+
+Pruebas recomendadas
+--------------------
+- Unit tests: parser (CSV/XLSX), utilidades de normalización, Zod schemas.
+- Integration tests: endpoints API usando SQLite de prueba o un container Postgres.
+- E2E: navegar flujo completo (upload -> save -> play) con Playwright.
+
+Contribuir
+---------
+Lee `CONTRIBUTING.md` en el repo para guías de flujo de trabajo, convenciones de commits y cómo abrir PRs.
+
+Contacto y mantenimiento
+-----------------------
+Si quieres que prepare:
+- Un pipeline CI (GitHub Actions) que ejecute lint, tests y `prisma migrate deploy`.
+- Un script para migrar contenidos del localStorage a la DB cuando se configure `DATABASE_URL`.
+
+---
+Fin del README. Para detalles operativos y API documentada, revisa los archivos `ARCHITECTURE.md` y `API.md` en la raíz del repo.
 # Ruleta Académica
 
 Resumen
