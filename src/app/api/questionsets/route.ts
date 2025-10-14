@@ -38,7 +38,8 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const parseResult = QuestionSetSchema.safeParse(body);
     if (!parseResult.success) {
-      return NextResponse.json({ error: 'Payload inválido', details: parseResult.error.errors }, { status: 400 });
+      // Use `issues` which is the supported property on ZodError for structured details
+      return NextResponse.json({ error: 'Payload inválido', details: parseResult.error.issues }, { status: 400 });
     }
 
     const { name, questions } = parseResult.data;
