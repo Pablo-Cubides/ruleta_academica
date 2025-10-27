@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { initSentry, captureException } from '@/lib/sentry';
 import { isRateLimited } from '@/lib/rateLimiter';
+import { logger } from '@/lib/logger';
 
 const QuestionSetSchema = z.object({
   name: z.string().min(1).max(200),
@@ -28,7 +29,7 @@ export async function GET() {
     }
   } catch (error) {
     // Log error in server console to aid debugging
-    console.error('Error loading question sets:', error);
+    logger.error('Error loading question sets', error);
     // Return 503 to indicate service unavailable instead of silently returning []
     return NextResponse.json({ error: 'Servicio no disponible' }, { status: 503 });
   }
@@ -41,7 +42,7 @@ export async function POST(req: NextRequest) {
     try {
       initSentry();
     } catch (e) {
-      console.error('Sentry init failed', e);
+      logger.warn('Sentry init failed', { error: e });
     }
 
     // Simple rate limit by IP for POSTs: default 5 requests per minute
@@ -58,7 +59,7 @@ export async function POST(req: NextRequest) {
       }
     } catch (e) {
       // If rate limiter fails for any reason, continue but log
-      console.error('Rate limiter error', e);
+      logger.error('Rate limiter error', e);
     }
 
     const body = await req.json();
@@ -94,11 +95,11 @@ export async function POST(req: NextRequest) {
     } finally {
       await prisma.$disconnect();
     }
-  } catch (error: any) {
-    console.error('Error creating question set:', error);
+  } catch (error: unknown) {
+    logger.error('Error creating question set', error, { route: '/api/questionsets POST' });
     // Report to Sentry if available but never throw
     try { captureException(error, { route: '/api/questionsets POST' }); } catch (_) {}
-    if (error?.code === 'P2002') {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'P2002') {
       return NextResponse.json(
         { error: 'Error al guardar. ¿Nombre repetido?' },
         { status: 400 }

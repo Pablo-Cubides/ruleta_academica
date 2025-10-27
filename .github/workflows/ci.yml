@@ -32,6 +32,9 @@ jobs:
       - name: Generate Prisma Client
         run: |
           npx prisma generate
+        env:
+          # Provide a fallback DATABASE_URL so prisma generate does not fail when the DB secret is not configured in CI
+          DATABASE_URL: "file:./dev.db"
 
       - name: Lint
         run: |
@@ -41,7 +44,7 @@ jobs:
         run: |
           npm run build
         env:
-          # SENTRY_DSN is optional for CI runs; if the secret is not set, the variable will be empty
+          # SENTRY_DSN is optional for CI runs; if the secret is not set this will be empty
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
 
     timeout-minutes: 20

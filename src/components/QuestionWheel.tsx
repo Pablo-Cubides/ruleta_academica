@@ -205,7 +205,13 @@ const QuestionWheel = ({ questions }: QuestionWheelProps) => {
 
   return (
     <div className="flex flex-col items-center gap-6 w-full">
-  <div className="text-2xl font-semibold text-primary">
+      {/* Screen reader announcements for dynamic changes */}
+      <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+        {isSpinning && 'Girando la ruleta...'}
+        {selectedQuestion && !isSpinning && `Pregunta seleccionada: ${selectedQuestion}`}
+      </div>
+      
+      <div className="text-2xl font-semibold text-primary">
         Preguntas restantes: {questionList.length}
       </div>
       <div className="relative flex justify-center items-center">
@@ -222,12 +228,15 @@ const QuestionWheel = ({ questions }: QuestionWheelProps) => {
             border: '8px solid #fff',
             boxShadow: '0 0 30px rgba(0,0,0,0.6)'
           }}
+          role="img"
+          aria-label={`Ruleta de preguntas con ${questionList.length} opciones`}
         >
           <svg
             ref={wheelRef}
             viewBox={`0 0 ${wheelSize} ${wheelSize}`}
             className="w-full h-full rounded-full"
             style={{ transform: 'rotate(-90deg)' }}
+            aria-hidden="true"
           >
             <defs>
               <filter id="glow">
@@ -288,6 +297,7 @@ const QuestionWheel = ({ questions }: QuestionWheelProps) => {
           className="btn-primary disabled:opacity-50"
           onClick={handleSpin}
           disabled={isSpinning || questionList.length === 0}
+          aria-label={`Girar la ruleta para seleccionar una pregunta aleatoria. ${questionList.length} preguntas disponibles`}
         >
           Girar
         </button>
@@ -295,6 +305,7 @@ const QuestionWheel = ({ questions }: QuestionWheelProps) => {
           className="bg-red-500 hover:bg-red-700 text-white font-bold py-3 px-8 rounded text-2xl disabled:opacity-50"
           onClick={handleRemove}
           disabled={isSpinning || selectedIndex === null}
+          aria-label={selectedIndex !== null ? `Eliminar pregunta seleccionada número ${selectedIndex + 1}` : 'Eliminar pregunta (primero debe seleccionar una)'}
         >
           Eliminar pregunta
         </button>
